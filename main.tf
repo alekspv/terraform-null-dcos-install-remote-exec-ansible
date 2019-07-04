@@ -115,6 +115,45 @@ ${join("\n", var.private_agent_private_ips)}
 [agents_public]
 ${join("\n", var.public_agent_private_ips)}
 [agents_windows]
+[agents_windows:vars]
+ansible_user=${var.windows_private_agent_username}
+ansible_connection=winrm
+ansible_winrm_transport=${var.ansible_winrm_transport}
+ansible_winrm_server_cert_validation=${var.ansible_winrm_server_cert_validation}
+[bootstraps:vars]
+node_type=bootstrap
+[masters:vars]
+node_type=master
+dcos_legacy_node_type_name=master
+[agents_private:vars]
+node_type=agent
+dcos_legacy_node_type_name=slave
+[agents_public:vars]
+node_type=agent_public
+dcos_legacy_node_type_name=slave_public
+[agents:children]
+agents_private
+agents_public
+[dcos:children]
+bootstraps
+masters
+agents
+agents_public
+EOF
+  }
+
+
+  provisioner "file" {
+    destination = "/tmp/mesosphere_universal_installer_inventory_windows"
+
+    content = <<EOF
+[bootstraps]
+${var.bootstrap_private_ip}
+[masters]
+${join("\n", var.master_private_ips)}
+[agents_private]
+[agents_public]
+[agents_windows]
 ${join("\n", formatlist("%s ansible_password=%s", var.windows_private_agent_private_ips, var.windows_private_agent_passwords))}
 [agents_windows:vars]
 ansible_user=${var.windows_private_agent_username}
@@ -167,6 +206,15 @@ EOF
       "# Workaround for https://github.com/hashicorp/terraform/issues/1178: ${join(",",var.depends_on)}",
       "sudo docker pull ${var.ansible_bundled_container}",
       "sudo docker run --network=host -it --rm -v $${SSH_AUTH_SOCK}:/tmp/ssh_auth_sock -e SSH_AUTH_SOCK=/tmp/ssh_auth_sock -v /tmp/mesosphere_universal_installer_dcos.yml:/dcos.yml -v /tmp/mesosphere_universal_installer_inventory:/inventory ${var.ansible_bundled_container} ansible-playbook -i inventory dcos_playbook.yml -e @/dcos.yml -e 'dcos_cluster_name_confirmed=True'",
+    ]
+  }
+
+    provisioner "remote-exec" {
+    inline = [
+      "# wait up to 2 minutes for docker to come up",
+      "declare -i timeout; until sudo docker info >/dev/null 2>&1;do timeout=$timeout+10; test $timeout -gt 120 && exit 1;echo waiting for docker; sleep 10;done",
+      "# Workaround for https://github.com/hashicorp/terraform/issues/1178: ${join(",",var.depends_on)}",
+      "sudo rm -rf /tmp/dcos-ansible ; sudo yum install git -y && cd /tmp && git clone -b feature/windows https://github.com/alekspv/dcos-ansible && cd /tmp/dcos-ansible && sudo docker build -t dcos-ansible-bundle-win . && sudo docker run -it -v /tmp/win_inventorymesosphere_universal_installer_inventory_windows:/inventory -v /tmp/ansible.cfg:/ansible.cfg -v /tmp/mesosphere_universal_installer_dcos.yml:/dcos.yml dcos-ansible-bundle-win ansible-playbook -i inventory -l agents_windows dcos_playbook.yml -e @/dcos.yml"
     ]
   }
 }
