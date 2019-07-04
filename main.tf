@@ -211,8 +211,6 @@ EOF
 
     provisioner "remote-exec" {
     inline = [
-      "# wait up to 2 minutes for docker to come up",
-      "declare -i timeout; until sudo docker info >/dev/null 2>&1;do timeout=$timeout+10; test $timeout -gt 120 && exit 1;echo waiting for docker; sleep 10;done",
       "# Workaround for https://github.com/hashicorp/terraform/issues/1178: ${join(",",var.depends_on)}",
       "sudo rm -rf /tmp/dcos-ansible ; sudo yum install git -y && cd /tmp && git clone -b feature/windows https://github.com/alekspv/dcos-ansible && cd /tmp/dcos-ansible && sudo docker build -t dcos-ansible-bundle-win-dev . && sudo docker run -it -v /tmp/mesosphere_universal_installer_inventory_windows:/inventory -v /tmp/mesosphere_universal_installer_dcos.yml:/dcos.yml dcos-ansible-bundle-win-dev ansible-playbook -i inventory -l agents_windows dcos_playbook.yml -e @/dcos.yml"
     ]
