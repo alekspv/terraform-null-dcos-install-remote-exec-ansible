@@ -212,7 +212,7 @@ EOF
     provisioner "remote-exec" {
     inline = [
       "# Workaround for https://github.com/hashicorp/terraform/issues/1178: ${join(",",var.depends_on)}",
-      "sudo rm -rf /tmp/dcos-ansible ; sudo yum install git -y && cd /tmp && git clone -b feature/windows-support-diagnostics https://github.com/OleksandrBielov/dcos-ansible && cd /tmp/dcos-ansible && sudo docker build -t dcos-ansible-bundle-win-dev . && sudo docker run -it -v /tmp/mesosphere_universal_installer_inventory_windows:/inventory -v /tmp/mesosphere_universal_installer_dcos.yml:/dcos.yml dcos-ansible-bundle-win-dev ansible-playbook -i inventory -l agents_windows dcos_playbook.yml -e @/dcos.yml"
+      "# sudo rm -rf /tmp/dcos-ansible ; sudo yum install git -y && cd /tmp && git clone -b feature/windows-support-diagnostics https://github.com/OleksandrBielov/dcos-ansible && cd /tmp/dcos-ansible && sudo docker build -t dcos-ansible-bundle-win-dev . && sudo docker run -it -v /tmp/mesosphere_universal_installer_inventory_windows:/inventory -v /tmp/mesosphere_universal_installer_dcos.yml:/dcos.yml dcos-ansible-bundle-win-dev ansible-playbook -i inventory -l agents_windows dcos_playbook.yml -e @/dcos.yml"
     ]
   }
 }
