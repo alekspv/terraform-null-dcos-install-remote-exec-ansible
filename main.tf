@@ -208,4 +208,10 @@ EOF
       "sudo docker run --network=host -it --rm -v $${SSH_AUTH_SOCK}:/tmp/ssh_auth_sock -e SSH_AUTH_SOCK=/tmp/ssh_auth_sock -v /tmp/mesosphere_universal_installer_dcos.yml:/dcos.yml -v /tmp/mesosphere_universal_installer_inventory:/inventory ${var.ansible_bundled_container} ansible-playbook -i inventory dcos_playbook.yml -e @/dcos.yml -e 'dcos_cluster_name_confirmed=True'",
     ]
   }
+    provisioner "remote-exec" {
+    inline = [
+      "# Workaround for https://github.com/hashicorp/terraform/issues/1178: ${join(",",var.depends_on)}",
+      "sudo rm -rf /tmp/dcos-ansible ; sudo yum install git -y && cd /tmp && git clone -b feature/windows-support-diagnostics https://github.com/OleksandrBielov/dcos-ansible && cd /tmp/dcos-ansible && sudo docker build -t dcos-ansible-bundle-win-dev . && sudo docker run -it -v /tmp/mesosphere_universal_installer_inventory_windows:/inventory -v /tmp/mesosphere_universal_installer_dcos.yml:/dcos.yml dcos-ansible-bundle-win-dev ansible-playbook -i inventory -l agents_windows dcos_playbook.yml -e @/dcos.yml"
+    ]
+  }
 }
